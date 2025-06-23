@@ -1,10 +1,4 @@
 //THREEJS RELATED VARIABLES 
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js"; // Correct import for OrbitControls
-
-import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
-
-import { SUBTRACTION as e, Brush as t, Evaluator as n } from "three-bvh-csg";
 
 var scene,
   camera,
