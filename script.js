@@ -1,11 +1,10 @@
-//THREEJS RELATED VARIABLES 
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js"; // Correct import for OrbitControls
+// THREEJS RELATED VARIABLES
+// Removed ES module imports as this script is designed for global scope libraries
+// import * as THREE from "three";
+// import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+// import { SUBTRACTION as e, Brush as t, Evaluator as n } from "three-bvh-csg";
 
-import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
-
-import { SUBTRACTION as e, Brush as t, Evaluator as n } from "three-bvh-csg";
-
+// Global variables, as used in your Codepen
 var scene,
   camera,
   controls,
@@ -19,7 +18,7 @@ var scene,
   renderer,
   container;
 
-//SCENE
+// SCENE VARIABLES
 var env, floor, dragon, pepperBottle,
   sneezingRate = 0,
   fireRate = 0,
@@ -32,8 +31,7 @@ var env, floor, dragon, pepperBottle,
   sneezeTimeout,
   powerField;
 
-//SCREEN VARIABLES
-
+// SCREEN VARIABLES
 var HEIGHT,
   WIDTH,
   windowHalfX,
@@ -43,12 +41,17 @@ var HEIGHT,
     y: 0
   };
 
-//INIT THREE JS, SCREEN AND MOUSE EVENTS
-
+// INIT THREE JS, SCREEN AND MOUSE EVENTS
 function init() {
-  
   powerField = document.getElementById('power');
-  
+
+  // Ensure 'world' div exists in HTML for the renderer to attach to
+  container = document.getElementById('world');
+  if (!container) {
+    console.error("Error: Div with id 'world' not found in HTML.");
+    return; // Exit if the container is not found
+  }
+
   scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0X106f8f, 350, 500);
 
@@ -73,21 +76,19 @@ function init() {
   });
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize(WIDTH, HEIGHT);
-  renderer.shadowMapEnabled = true;
-  container = document.getElementById('world');
+  renderer.shadowMap.enabled = true; // Corrected from shadowMapEnabled to shadowMap.enabled for modern Three.js
   container.appendChild(renderer.domElement);
   windowHalfX = WIDTH / 2;
   windowHalfY = HEIGHT / 2;
   window.addEventListener('resize', onWindowResize, false);
   document.addEventListener('mouseup', handleMouseUp, false);
   document.addEventListener('touchend', handleTouchEnd, false);
-  //*
+  // OrbitControls setup
   controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.minPolarAngle = -Math.PI / 2; 
+  controls.minPolarAngle = -Math.PI / 2;
   controls.maxPolarAngle = Math.PI / 2;
   controls.noZoom = true;
   controls.noPan = true;
-  //*/
 }
 
 function onWindowResize() {
@@ -103,9 +104,9 @@ function onWindowResize() {
 function handleMouseUp(event) {
   if (sneezeTimeout) clearTimeout(sneezeTimeout);
   sneezingRate += (maxSneezingRate - sneezingRate) / 10;
-  powerField.innerHTML = parseInt(sneezingRate*100/maxSneezingRate);
+  powerField.innerHTML = parseInt(sneezingRate * 100 / maxSneezingRate);
   dragon.prepareToSneeze(sneezingRate);
-  sneezeTimeout = setTimeout(sneeze, sneezeDelay*globalSpeedRate);
+  sneezeTimeout = setTimeout(sneeze, sneezeDelay * globalSpeedRate);
   dragon.isSneezing = true;
 }
 
@@ -118,9 +119,9 @@ function sneeze() {
 function handleTouchEnd(event) {
   if (sneezeTimeout) clearTimeout(sneezeTimeout);
   sneezingRate += (maxSneezingRate - sneezingRate) / 10;
-  powerField.innerHTML = parseInt(sneezingRate*100/maxSneezingRate);
+  powerField.innerHTML = parseInt(sneezingRate * 100 / maxSneezingRate);
   dragon.prepareToSneeze(sneezingRate);
-  sneezeTimeout = setTimeout(sneeze, sneezeDelay*globalSpeedRate);
+  sneezeTimeout = setTimeout(sneeze, sneezeDelay * globalSpeedRate);
   dragon.isSneezing = true;
 }
 
@@ -130,11 +131,21 @@ function createLights() {
   shadowLight = new THREE.DirectionalLight(0xa5ebf0, .8);
   shadowLight.position.set(-100, 100, 50);
   shadowLight.castShadow = true;
-  shadowLight.shadowDarkness = .15;
+  shadowLight.shadow.mapSize.width = 1024; // Added for better shadows
+  shadowLight.shadow.mapSize.height = 1024; // Added for better shadows
+  shadowLight.shadow.camera.near = 1; // Added for better shadows
+  shadowLight.shadow.camera.far = 1000; // Added for better shadows
+  shadowLight.shadow.camera.left = -500; // Added for better shadows
+  shadowLight.shadow.camera.right = 500; // Added for better shadows
+  shadowLight.shadow.camera.top = 500; // Added for better shadows
+  shadowLight.shadow.camera.bottom = -500; // Added for better shadows
+  // shadowLight.shadowDarkness = .15; // Deprecated in recent Three.js, controlled by light.intensity
+  shadowLight.intensity = .8; // Adjusted intensity for shadow effect
 
   backLight = new THREE.DirectionalLight(0xffffff, .4);
   backLight.position.set(200, 100, 100);
-  backLight.shadowDarkness = .1;
+  // backLight.shadowDarkness = .1; // Deprecated
+  backLight.intensity = .4; // Adjusted intensity
   backLight.castShadow = true;
 
   scene.add(backLight);
@@ -142,6 +153,7 @@ function createLights() {
   scene.add(shadowLight);
 }
 
+// Dragon class definition, made global as per Codepen structure
 Dragon = function() {
   this.tailAmplitude = 3;
   this.tailAngle = 0;
@@ -154,43 +166,51 @@ Dragon = function() {
 
   this.threegroup = new THREE.Group(); // this is a sort of container that will hold all the meshes and will be added to the scene;
 
-  // Materials
-  var greenMat = new THREE.MeshLambertMaterial({
+  // Materials (using MeshPhongMaterial for better reflection with lights)
+  var greenMat = new THREE.MeshPhongMaterial({
     color: 0x05b8ff,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading, // Flat shading for blocky look
+    shininess: 30
   });
-  var lightGreenMat = new THREE.MeshLambertMaterial({
+  var lightGreenMat = new THREE.MeshPhongMaterial({
     color: 0x53d8fc,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading,
+    shininess: 30
   });
 
-  var yellowMat = new THREE.MeshLambertMaterial({
+  var yellowMat = new THREE.MeshPhongMaterial({
     color: 0xfdde8c,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading,
+    shininess: 30
   });
 
-  var redMat = new THREE.MeshLambertMaterial({
+  var redMat = new THREE.MeshPhongMaterial({
     color: 0x95c088,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading,
+    shininess: 30
   });
 
-  var whiteMat = new THREE.MeshLambertMaterial({
+  var whiteMat = new THREE.MeshPhongMaterial({
     color: 0xfaf3d7,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading,
+    shininess: 30
   });
 
-  var brownMat = new THREE.MeshLambertMaterial({
+  var brownMat = new THREE.MeshPhongMaterial({
     color: 0x066899,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading,
+    shininess: 30
   });
 
-  var blackMat = new THREE.MeshLambertMaterial({
+  var blackMat = new THREE.MeshPhongMaterial({
     color: 0x55e9fa,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading,
+    shininess: 30
   });
-  var pinkMat = new THREE.MeshLambertMaterial({
+  var pinkMat = new THREE.MeshPhongMaterial({
     color: 0x5ab7ed,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading,
+    shininess: 30
   });
 
   // body
@@ -226,7 +246,7 @@ Dragon = function() {
     linewidth: 5
   });
 
-  var tailGeom = new THREE.Geometry();
+  var tailGeom = new THREE.Geometry(); // Deprecated, but used in original code
   tailGeom.vertices.push(
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(0, 5, -10),
@@ -260,8 +280,8 @@ Dragon = function() {
 
   // head face
   this.face = makeCube(greenMat, 60, 50, 80, 0, 25, 40, 0, 0, 0);
-  
-  
+
+
   // head horn
   var hornGeom = new THREE.CylinderGeometry(0, 6, 10, 4, 1);
   this.hornL = new THREE.Mesh(hornGeom, yellowMat);
@@ -296,52 +316,52 @@ Dragon = function() {
   // head mouth tongue
   this.tongue = makeCube(redMat, 20, 10, 20, 0, -3, 15, 0, 0, 0);
   this.mouth.add(this.tongue);
-  
+
 // head smile
   var smileGeom = new THREE.TorusGeometry( 8, 1, 2, 10, Math.PI );
   this.smile = new THREE.Mesh(smileGeom, blackMat);
-  this.smile.position.z = 82;  
+  this.smile.position.z = 82;
   this.smile.position.y = 5;
- 
- // head cheek
+
+// head cheek
   this.cheekL = makeCube(lightGreenMat, 4, 5, 22, 30, 18, 18, 0, 0, 0);
   this.cheekR = this.cheekL.clone();
   this.cheekR.position.x = -this.cheekL.position.x;
 
-  
+
   //head spots
   this.spot1 = makeCube(lightGreenMat, 2, 2, 2, 20, 16, 80, 0, 0, 0);
-  
+
   this.spot2 = this.spot1.clone();
   this.spot2.position.x = 15;
   this.spot2.position.y = 14;
-  
+
   this.spot3 = this.spot1.clone();
   this.spot3.position.x = 16;
   this.spot3.position.y = 20;
-  
+
   this.spot4 = this.spot1.clone();
   this.spot4.position.x = 12;
   this.spot4.position.y = 18;
-  
-    
+
+
   this.spot5 = this.spot1.clone();
   this.spot5.position.x = -15;
   this.spot5.position.y = 14;
-  
+
   this.spot6 = this.spot1.clone();
   this.spot6.position.x = -14;
   this.spot6.position.y = 20;
-  
+
   this.spot7 = this.spot1.clone();
   this.spot7.position.x = -19;
   this.spot7.position.y = 17;
-  
+
   this.spot8 = this.spot1.clone();
   this.spot8.position.x = -11;
   this.spot8.position.y = 17;
-  
-  
+
+
   // head eye
   this.eyeL = makeCube(whiteMat, 10, 22, 22, 27, 34, 18, 0, 0, 0);
   this.eyeR = this.eyeL.clone();
@@ -410,8 +430,8 @@ Dragon = function() {
 
 Dragon.prototype.update = function() {
 
-  this.tailAngle += this.tailSpeed/globalSpeedRate;
-  this.wingAngle += this.wingSpeed/globalSpeedRate;
+  this.tailAngle += this.tailSpeed / globalSpeedRate;
+  this.wingAngle += this.wingSpeed / globalSpeedRate;
   for (var i = 0; i < this.tailLine.geometry.vertices.length; i++) {
     var v = this.tailLine.geometry.vertices[i];
     v.y = Math.sin(this.tailAngle - (Math.PI / 3) * i) * this.tailAmplitude * i * i;
@@ -430,7 +450,7 @@ Dragon.prototype.update = function() {
 
 Dragon.prototype.prepareToSneeze = function(s) {
   var _this = this;
-  var speed = .7*globalSpeedRate;
+  var speed = .7 * globalSpeedRate;
   TweenLite.to(this.head.rotation, speed, {
     x: -s * .12,
     ease: Back.easeOut
@@ -444,17 +464,18 @@ Dragon.prototype.prepareToSneeze = function(s) {
     x: s * .18,
     ease: Back.easeOut
   });
-  
-  TweenLite.to(this.smile.position, speed/2, {
-    z:75,
-    y:10,
+
+  TweenLite.to(this.smile.position, speed / 2, {
+    z: 75,
+    y: 10,
     ease: Back.easeOut
   });
-  TweenLite.to(this.smile.scale, speed/2, {
-    x:0, y:0,
+  TweenLite.to(this.smile.scale, speed / 2, {
+    x: 0,
+    y: 0,
     ease: Back.easeOut
   });
-  
+
   TweenMax.to(this.noseL.scale, speed, {
     x: 1 + s * .1,
     y: 1 + s * .1,
@@ -534,7 +555,7 @@ Dragon.prototype.prepareToSneeze = function(s) {
 Dragon.prototype.sneeze = function(s) {
   var _this = this;
   var sneezeEffect = 1 - (s / maxSneezingRate);
-  var speed = .1*globalSpeedRate;
+  var speed = .1 * globalSpeedRate;
   timeFire = Math.round(s * 10);
 
   TweenLite.to(this.head.rotation, speed, {
@@ -551,19 +572,19 @@ Dragon.prototype.sneeze = function(s) {
     x: 0,
     ease: Strong.easeOut
   });
-  
-  TweenLite.to(this.smile.position, speed*2, {
-    z:82,
-    y:5,
+
+  TweenLite.to(this.smile.position, speed * 2, {
+    z: 82,
+    y: 5,
     ease: Strong.easeIn
   });
-  
-  TweenLite.to(this.smile.scale, speed*2, {
-    x:1,
-    y:1,
+
+  TweenLite.to(this.smile.scale, speed * 2, {
+    x: 1,
+    y: 1,
     ease: Strong.easeIn
   });
-  
+
 
   TweenMax.to(this.noseL.scale, speed, {
     y: sneezeEffect,
@@ -582,21 +603,21 @@ Dragon.prototype.sneeze = function(s) {
     ease: Strong.easeOut
   });
   TweenMax.to(this.irisL.scale, speed, {
-    y: sneezeEffect/2,
+    y: sneezeEffect / 2,
     z: 1,
     ease: Strong.easeOut
   });
   TweenMax.to(this.irisR.scale, speed, {
-    y: sneezeEffect/2,
+    y: sneezeEffect / 2,
     z: 1,
     ease: Strong.easeOut
   });
   TweenMax.to(this.eyeL.scale, speed, {
-    y: sneezeEffect/2,
+    y: sneezeEffect / 2,
     ease: Back.easeOut
   });
   TweenMax.to(this.eyeR.scale, speed, {
-    y: sneezeEffect/2,
+    y: sneezeEffect / 2,
     ease: Back.easeOut
   });
 
@@ -622,20 +643,20 @@ Dragon.prototype.sneeze = function(s) {
     ease: Back.easeOut
   });
 
-  TweenMax.to(this.irisL.position, speed*7, {
+  TweenMax.to(this.irisL.position, speed * 7, {
     y: 35,
     ease: Back.easeOut
   });
-  TweenMax.to(this.irisR.position, speed*7, {
+  TweenMax.to(this.irisR.position, speed * 7, {
     y: 35,
     ease: Back.easeOut
   });
-  TweenMax.to(this.earR.rotation, speed*3, {
+  TweenMax.to(this.earR.rotation, speed * 3, {
     x: s * .20,
     y: s * .20,
     ease: Back.easeOut
   });
-  TweenMax.to(this.earL.rotation, speed*3, {
+  TweenMax.to(this.earL.rotation, speed * 3, {
     x: s * .20,
     y: -s * .20,
     ease: Back.easeOut,
@@ -646,7 +667,7 @@ Dragon.prototype.sneeze = function(s) {
     }
   });
 
-  TweenMax.to(this.tail.rotation, speed*3, {
+  TweenMax.to(this.tail.rotation, speed * 3, {
     x: -s * 0.1,
     ease: Back.easeOut
   });
@@ -655,7 +676,7 @@ Dragon.prototype.sneeze = function(s) {
 
 Dragon.prototype.backToNormal = function(s) {
   var _this = this;
-  var speed = 1*globalSpeedRate;
+  var speed = 1 * globalSpeedRate;
   TweenLite.to(this.head.rotation, speed, {
     x: 0,
     ease: Strong.easeInOut
@@ -693,11 +714,11 @@ Dragon.prototype.backToNormal = function(s) {
     z: 1,
     ease: Back.easeOut
   });
-  TweenMax.to(this.irisL.position, speed*.7, {
+  TweenMax.to(this.irisL.position, speed * .7, {
     y: 30,
     ease: Back.easeOut
   });
-  TweenMax.to(this.irisR.position, speed*.7, {
+  TweenMax.to(this.irisR.position, speed * .7, {
     y: 30,
     ease: Back.easeOut
   });
@@ -722,21 +743,21 @@ Dragon.prototype.backToNormal = function(s) {
     ease: Back.easeOut
   });
 
-  TweenMax.to(this.wingL.rotation, speed*1.3, {
+  TweenMax.to(this.wingL.rotation, speed * 1.3, {
     z: -Math.PI / 4,
     ease: Back.easeInOut
   });
-  TweenMax.to(this.wingR.rotation, speed*1.3, {
+  TweenMax.to(this.wingR.rotation, speed * 1.3, {
     z: Math.PI / 4,
     ease: Back.easeInOut
   });
 
-  TweenMax.to(this.earL.rotation, speed*1.3, {
+  TweenMax.to(this.earL.rotation, speed * 1.3, {
     x: 0,
     y: 0,
     ease: Back.easeInOut
   });
-  TweenMax.to(this.earR.rotation, speed*1.3, {
+  TweenMax.to(this.earR.rotation, speed * 1.3, {
     x: 0,
     y: 0,
     ease: Back.easeInOut,
@@ -746,7 +767,7 @@ Dragon.prototype.backToNormal = function(s) {
     }
   });
 
-  TweenMax.to(this.tail.rotation, speed*1.3, {
+  TweenMax.to(this.tail.rotation, speed * 1.3, {
     x: 0,
     ease: Back.easeOut
   });
@@ -768,8 +789,10 @@ function makeCube(mat, w, h, d, posX, posY, posZ, rotX, rotY, rotZ) {
 function createFloor() {
   env = new THREE.Group();
 
-  floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), new THREE.MeshBasicMaterial({
-    color: 0X21756d
+  // Changed to MeshPhongMaterial for better interaction with lights
+  floor = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), new THREE.MeshPhongMaterial({
+    color: 0X21756d,
+    shininess: 10
   }));
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -36;
@@ -790,10 +813,12 @@ SmokeParticle = function() {
     g: 222,
     b: 240,
   };
-  var particleMat = new THREE.MeshLambertMaterial({
+  // Changed to MeshPhongMaterial for consistency
+  var particleMat = new THREE.MeshPhongMaterial({
     transparent: true,
     opacity: .5,
-    shading: THREE.FlatShading
+    shading: THREE.FlatShading,
+    shininess: 0
   });
   this.mesh = makeCube(particleMat, 4, 4, 4, 0, 0, 0, 0, 0, 0);
   awaitingSmokeParticles.push(this);
@@ -816,13 +841,13 @@ SmokeParticle.prototype.initialize = function() {
   awaitingSmokeParticles.push(this);
 }
 
-SmokeParticle.prototype.updateColor = function() { 
+SmokeParticle.prototype.updateColor = function() {
   this.mesh.material.color.setRGB(this.color.r, this.color.g, this.color.b);
 }
 
 SmokeParticle.prototype.fly = function() {
   var _this = this;
-  var speed = 10*globalSpeedRate;
+  var speed = 10 * globalSpeedRate;
   var ease = Strong.easeOut;
   var initX = this.mesh.position.x;
   var initY = this.mesh.position.y;
@@ -875,7 +900,7 @@ SmokeParticle.prototype.fly = function() {
 
 SmokeParticle.prototype.fire = function(f) {
   var _this = this;
-  var speed = 1*globalSpeedRate;
+  var speed = 1 * globalSpeedRate;
   var ease = Strong.easeOut;
   var initX = this.mesh.position.x;
   var initY = this.mesh.position.y;
@@ -883,8 +908,8 @@ SmokeParticle.prototype.fire = function(f) {
 
   TweenMax.to(this.mesh.position, speed, {
     x: 0,
-    y: initY-2*f,
-    z: Math.max(initZ+15*f, initZ+40),
+    y: initY - 2 * f,
+    z: Math.max(initZ + 15 * f, initZ + 40),
     ease: ease
   });
   TweenMax.to(this.mesh.rotation, speed, {
@@ -892,31 +917,31 @@ SmokeParticle.prototype.fire = function(f) {
     y: Math.random() * Math.PI * 3,
     ease: ease
   });
-  
+
   var bezierScale = [{
-      x:1,
-      y:1,
-      z:1
-    },{
-      x:f/maxSneezingRate+Math.random()*.3,
-      y:f/maxSneezingRate+Math.random()*.3,
-      z:f*2/maxSneezingRate+Math.random()*.3
-    }, {
-      x:f/maxSneezingRate+Math.random()*.5,
-      y:f/maxSneezingRate+Math.random()*.5,
-      z:f*2/maxSneezingRate+Math.random()*.5
-    },{
-      x:f*2/maxSneezingRate+Math.random()*.5,
-      y:f*2/maxSneezingRate+Math.random()*.5,
-      z:f*4/maxSneezingRate+Math.random()*.5
-    },{
-      x:f*2+Math.random()*5,
-      y:f*2+Math.random()*5,
-      z:f*2+Math.random()*5
-    }];
-  
+    x: 1,
+    y: 1,
+    z: 1
+  }, {
+    x: f / maxSneezingRate + Math.random() * .3,
+    y: f / maxSneezingRate + Math.random() * .3,
+    z: f * 2 / maxSneezingRate + Math.random() * .3
+  }, {
+    x: f / maxSneezingRate + Math.random() * .5,
+    y: f / maxSneezingRate + Math.random() * .5,
+    z: f * 2 / maxSneezingRate + Math.random() * .5
+  }, {
+    x: f * 2 / maxSneezingRate + Math.random() * .5,
+    y: f * 2 / maxSneezingRate + Math.random() * .5,
+    z: f * 4 / maxSneezingRate + Math.random() * .5
+  }, {
+    x: f * 2 + Math.random() * 5,
+    y: f * 2 + Math.random() * 5,
+    z: f * 2 + Math.random() * 5
+  }];
+
   TweenMax.to(this.mesh.scale, speed * 2, {
-    bezier:bezierScale,
+    bezier: bezierScale,
     ease: ease,
     onComplete: function() {
       _this.initialize();
@@ -928,30 +953,30 @@ SmokeParticle.prototype.fire = function(f) {
     ease: ease
   });
   //*
-  
+
   var bezierColor = [{
-      r: 0 / 255,
-      g: 225 / 255,
-      b: 255 / 255
-    },{
-      r: 39 / 255,
-      g: 245 / 255,
-      b: 166 / 255
-    },{
-      r: 40 / 255,
-      g: 250 / 255,
-      b: 166 / 255
-    }, {
-      r: 0 / 255,
-      g: 145 / 255,
-      b: 255 / 255
-    }, {
-      r: 0 / 255,
-      g: 0 / 255,
-      b: 0 / 255
-    }];
-  
-  
+    r: 0 / 255,
+    g: 225 / 255,
+    b: 255 / 255
+  }, {
+    r: 39 / 255,
+    g: 245 / 255,
+    b: 166 / 255
+  }, {
+    r: 40 / 255,
+    g: 250 / 255,
+    b: 166 / 255
+  }, {
+    r: 0 / 255,
+    g: 145 / 255,
+    b: 255 / 255
+  }, {
+    r: 0 / 255,
+    g: 0 / 255,
+    b: 0 / 255
+  }];
+
+
   TweenMax.to(this.color, speed, {
     bezier: bezierColor,
     ease: Strong.easeOut,
@@ -1025,13 +1050,15 @@ function render() {
   renderer.render(scene, camera);
 }
 
-init();
-createLights();
-createFloor();
-createDragon();
-loop();
+// Initializing the scene and animation
+window.onload = function() {
+  init();
+  createLights();
+  createFloor();
+  createDragon();
+  loop();
+}
 
-//dragon.threegroup.rotation.y = Math.PI/4;
 
 function clamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
