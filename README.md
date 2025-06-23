@@ -1,3 +1,8 @@
+<div align="center">
+  <img src=".dragon.png" width="600"/>
+</div>
+<br />
+
 # 🐉 Dragon Sneeze
 
 This project features an interactive 3D animation of a dragon that "sneezes" or "breathes fire" based on user interaction. It's a fun demonstration of **Three.js** for 3D rendering and **GSAP** for animations.
