@@ -4,24 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sneeze Dragon!</title>
-    <!-- Your existing stylesheet -->
+    <!-- CSS from your Codepen -->
     <link rel="stylesheet" href="style.css">
-    <!-- Add TweenMax.min.js here. It's an older GSAP version, usually globally available. -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.16.1/TweenMax.min.js"></script>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    <script async src="https://ga.jspm.io/npm:es-module-shims@1.6.3/dist/es-module-shims.js" crossorigin="anonymous"></script>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
-          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/",
-          "three-mesh-bvh": "https://unpkg.com/three-mesh-bvh@0.6.0/build/index.module.js",
-          "three-bvh-csg": "https://unpkg.com/three-bvh-csg@0.0.7/build/index.module.js"
-        }
-      }
-    </script>
-    <script type="module" src="script.js"></script>
+    <!-- HTML structure from your Codepen -->
+    <div id="world"></div>
+    <div id="instructions">The longer you keep clicking, the harder he sneezes<br/><span class="lightInstructions">- Press and drag to turn around -</span></div>
+    <div id="power">00</div>
+
+    <!-- External JavaScript Libraries from CDNs, as used in your Codepen -->
+    <!-- Order matters: Three.js first, then OrbitControls and GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
+    <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/264161/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.16.1/TweenMax.min.js"></script>
+    
+    <!-- Your main script.js -->
+    <script src="script.js"></script>
 </body>
 </html>
